@@ -742,6 +742,13 @@ test_ifforwhile_scope
 set -g status 5
 #CHECKERR: set: Tried to change the read-only variable 'status'
 
+# $EPOCHSECONDS is computed and read-only.
+string match -qr '^-?[0-9]+$' -- $EPOCHSECONDS
+echo $status
+#CHECK: 0
+set -g EPOCHSECONDS 5
+#CHECKERR: set: Tried to change the read-only variable 'EPOCHSECONDS'
+
 while set -e __fish_test_universal_exported_var
 end
 set -xU __fish_test_universal_exported_var 1

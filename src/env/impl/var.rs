@@ -94,6 +94,7 @@ pub(super) mod electric_values {
     use fish_common::assert_sorted_by_name;
     use fish_widestring::{L, ToWString as _, wstr};
     use nix::sys::stat::{Mode, umask};
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     const fn var(name: &'static wstr, value: ElectricValue) -> ElectricVar {
         ElectricVar::new_default(name, value)
@@ -107,6 +108,7 @@ pub(super) mod electric_values {
 
     // Keep sorted alphabetically
     pub(in super::super) const ELECTRIC_VARIABLES: &[ElectricVar] = &[
+        var(L!("EPOCHSECONDS"), Computed(GET_EPOCHSECONDS)),
         var(L!("FISH_VERSION"), Regular),
         exported_var(L!("PWD"), Computed(GET_PWD)),
         exported_var(L!("SHLVL"), Regular),
@@ -133,6 +135,13 @@ pub(super) mod electric_values {
     ];
     assert_sorted_by_name!(ELECTRIC_VARIABLES);
 
+    const GET_EPOCHSECONDS: Getter = |_env| {
+        let secs = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or_else(|e| -(e.duration().as_secs() as i64));
+        EnvVar::new_from_name(L!("EPOCHSECONDS"), secs.to_wstring())
+    };
     const GET_PWD: Getter = |env| EnvVar::new(env.perproc_data.pwd.clone(), EnvVarFlags::EXPORT);
     const GET_FISH_KILL_SIGNAL: Getter = |env| {
         let js = &env.perproc_data.statuses;
